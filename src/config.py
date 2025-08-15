@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     log_dir: Path = Field(default=Path("./logs"))
     database_url: str = Field(default="sqlite:///./data/trading.db")
     duckdb_path: Path = Field(default=Path("./data/market_data.duckdb"))
+    
+    @property
+    def data_directory(self) -> str:
+        """获取数据目录路径"""
+        return str(self.data_dir)
 
     # ZeroMQ Configuration
     zmq_pub_port: int = Field(default=5555, gt=1024, lt=65535)
