@@ -69,6 +69,6 @@ site/
 tmp/
 temp/
 *.tmp
-
+.serena/
 .kiro/
 CLAUDE.local.md
