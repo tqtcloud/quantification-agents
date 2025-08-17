@@ -253,7 +253,7 @@ class MetricsCollector:
             for percentile in [50, 90, 95, 99]:
                 p_key = f"p{percentile}"
                 if p_key in stats:
-                    lines.append(f"{name}{{quantile=\"0.{percentile:02d}\"{self._add_labels(labels)}} {stats[p_key]}")
+                    lines.append(f"{name}{{quantile=\"0.{percentile:02d}\"{self._add_labels(labels)}}} {stats[p_key]}")
         
         return '\n'.join(lines)
     

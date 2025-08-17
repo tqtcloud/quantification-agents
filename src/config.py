@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     # Monitoring
     enable_metrics: bool = Field(default=True)
     metrics_port: int = Field(default=9090, gt=1024, lt=65535)
+    
+    # Environment
+    environment: Literal["development", "testing", "production"] = Field(
+        default="development", description="Current environment"
+    )
 
     @field_validator("data_dir", "log_dir", "duckdb_path")
     @classmethod

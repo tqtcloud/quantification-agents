@@ -49,7 +49,7 @@ class EnvironmentMetadata(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
 
 
 class TradingSession(Base):
@@ -69,7 +69,7 @@ class TradingSession(Base):
     total_pnl = Column(Float, default=0.0)
     max_drawdown = Column(Float, default=0.0)
     sharpe_ratio = Column(Float, nullable=True)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
     
     orders = relationship("OrderRecord", back_populates="session")
     positions = relationship("PositionRecord", back_populates="session")
@@ -95,7 +95,7 @@ class OrderRecord(Base):
     avg_price = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
     
     session = relationship("TradingSession", back_populates="orders")
 
@@ -117,7 +117,7 @@ class PositionRecord(Base):
     max_loss = Column(Float, default=0.0)
     opened_at = Column(DateTime, default=datetime.utcnow)
     closed_at = Column(DateTime, nullable=True)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
     
     session = relationship("TradingSession", back_populates="positions")
 
@@ -138,7 +138,7 @@ class TradeRecord(Base):
     commission_asset = Column(String(10), nullable=True)
     realized_pnl = Column(Float, default=0.0)
     executed_at = Column(DateTime, default=datetime.utcnow)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
     
     session = relationship("TradingSession", back_populates="trades")
 
@@ -157,7 +157,7 @@ class SignalRecord(Base):
     executed = Column(Boolean, default=False)
     order_id = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    metadata = Column(JSON, default={})
+    env_metadata = Column(JSON, default={})
 
 
 class StrategyRecord(Base):
