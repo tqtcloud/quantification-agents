@@ -1,0 +1,164 @@
+{
+  "position_manager": {
+    "max_positions": 20,
+    "max_exposure_per_symbol": 0.15,
+    "risk_check_interval_seconds": 30,
+    "performance_update_interval_seconds": 60,
+    "correlation_update_interval_minutes": 15,
+    "enable_risk_monitoring": true,
+    "enable_performance_tracking": true,
+    "auto_rebalance_enabled": false,
+    "emergency_stop_enabled": true,
+    "max_daily_loss_pct": -5.0,
+    "max_portfolio_drawdown_pct": -10.0,
+    "correlation_threshold": 0.7,
+    "concentration_threshold": 0.3
+  },
+  "auto_closer": {
+    "monitoring_interval_seconds": 5,
+    "max_concurrent_closes": 10,
+    "enable_emergency_stop": true,
+    "emergency_loss_threshold": -8.0,
+    "position_timeout_hours": 48,
+    "enable_statistics_logging": true,
+    "log_interval_minutes": 30,
+    "enable_risk_alerts": true,
+    "max_daily_closes": 100,
+    "correlation_check_enabled": true,
+    "volatility_adjustment_enabled": true,
+    "strategies": {
+      "profit_target": {
+        "enabled": true,
+        "priority": 2,
+        "parameters": {
+          "target_profit_pct": 5.0,
+          "partial_close_enabled": true,
+          "first_partial_pct": 50.0,
+          "first_partial_target": 3.0
+        }
+      },
+      "stop_loss": {
+        "enabled": true,
+        "priority": 1,
+        "parameters": {
+          "stop_loss_pct": -2.0,
+          "emergency_stop_pct": -5.0,
+          "use_atr_stop": true,
+          "atr_multiplier": 2.0
+        }
+      },
+      "trailing_stop": {
+        "enabled": true,
+        "priority": 2,
+        "parameters": {
+          "trailing_distance_pct": 1.5,
+          "activation_profit_pct": 1.0,
+          "use_atr_trailing": true,
+          "atr_multiplier": 1.5,
+          "max_trailing_distance_pct": 3.0
+        }
+      },
+      "time_based": {
+        "enabled": true,
+        "priority": 4,
+        "parameters": {
+          "max_hold_hours": 24,
+          "intraday_close_time": "15:30",
+          "weekend_close": true,
+          "force_close_before_events": true
+        }
+      },
+      "technical_reversal": {
+        "enabled": true,
+        "priority": 3,
+        "parameters": {
+          "reversal_threshold": -0.5,
+          "confirmation_required": true,
+          "min_signal_strength": 0.6,
+          "check_momentum_reversal": true,
+          "check_volume_confirmation": true
+        }
+      },
+      "sentiment_change": {
+        "enabled": true,
+        "priority": 5,
+        "parameters": {
+          "sentiment_change_threshold": 0.4,
+          "extreme_sentiment_threshold": 0.8,
+          "sentiment_window_minutes": 30,
+          "fear_greed_threshold": 20
+        }
+      },
+      "dynamic_trailing": {
+        "enabled": true,
+        "priority": 3,
+        "parameters": {
+          "base_trailing_pct": 2.0,
+          "volatility_adjustment": true,
+          "profit_acceleration": true,
+          "correlation_adjustment": true,
+          "min_trailing_pct": 0.5,
+          "max_trailing_pct": 5.0,
+          "adjustment_frequency_minutes": 5
+        }
+      }
+    }
+  },
+  "market_data": {
+    "default_atr_period": 14,
+    "default_atr_multiplier": 2.0,
+    "volatility_window_days": 30,
+    "correlation_window_days": 60,
+    "price_cache_ttl_seconds": 30,
+    "update_interval_seconds": 5
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file_prefix": "position_manager",
+    "max_file_size_mb": 100,
+    "backup_count": 5,
+    "console_output": true
+  },
+  "alerts": {
+    "enabled": true,
+    "email_notifications": false,
+    "webhook_url": null,
+    "risk_alert_cooldown_minutes": 10,
+    "position_alert_cooldown_minutes": 5,
+    "alert_levels": {
+      "low": {
+        "enabled": true,
+        "channels": ["log"]
+      },
+      "medium": {
+        "enabled": true,
+        "channels": ["log", "console"]
+      },
+      "high": {
+        "enabled": true,
+        "channels": ["log", "console", "file"]
+      },
+      "critical": {
+        "enabled": true,
+        "channels": ["log", "console", "file", "webhook"]
+      }
+    }
+  },
+  "performance": {
+    "enable_profiling": false,
+    "profile_output_dir": "logs/profiles",
+    "memory_monitoring": true,
+    "cpu_monitoring": true,
+    "gc_monitoring": true,
+    "async_monitoring": true
+  },
+  "simulation": {
+    "enable_paper_trading": true,
+    "slippage_pct": 0.05,
+    "commission_pct": 0.1,
+    "latency_ms": 100,
+    "fill_rate": 0.98,
+    "partial_fill_probability": 0.1
+  }
+}
