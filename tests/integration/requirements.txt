@@ -1,0 +1,156 @@
+# REST API和WebSocket集成测试依赖包
+
+# 核心测试框架
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.3.0  # 并行测试
+pytest-timeout>=2.1.0  # 测试超时
+pytest-mock>=3.11.0  # Mock支持
+pytest-benchmark>=4.0.0  # 性能基准测试
+
+# HTTP客户端和服务器
+httpx>=0.24.0  # 异步HTTP客户端
+requests>=2.31.0  # 同步HTTP客户端（备用）
+fastapi>=0.100.0  # Web框架
+uvicorn>=0.23.0  # ASGI服务器
+
+# WebSocket支持
+websockets>=11.0.0  # WebSocket客户端/服务器
+python-websocket-client>=1.6.0  # WebSocket客户端（备用）
+
+# 数据库和ORM
+sqlalchemy>=2.0.0  # ORM
+alembic>=1.11.0  # 数据库迁移
+asyncpg>=0.28.0  # PostgreSQL异步驱动（如需要）
+aiosqlite>=0.19.0  # SQLite异步驱动
+
+# 认证和安全
+pyjwt>=2.8.0  # JWT令牌
+cryptography>=41.0.0  # 加密库
+bcrypt>=4.0.0  # 密码哈希
+passlib>=1.7.4  # 密码处理
+
+# 数据验证和序列化
+pydantic>=2.0.0  # 数据验证
+pydantic-settings>=2.0.0  # 配置管理
+
+# 时间和日期
+python-dateutil>=2.8.0  # 日期时间工具
+
+# 配置管理
+python-dotenv>=1.0.0  # .env文件支持
+pyyaml>=6.0  # YAML支持
+toml>=0.10.0  # TOML支持
+
+# 日志和监控
+structlog>=23.1.0  # 结构化日志
+psutil>=5.9.0  # 系统监控
+
+# 数据处理
+numpy>=1.24.0  # 数值计算（如需要）
+pandas>=2.0.0  # 数据分析（如需要）
+
+# 网络和并发
+aiofiles>=23.0.0  # 异步文件操作
+aiohttp>=3.8.0  # 异步HTTP（备用）
+
+# 开发和调试工具
+faker>=19.0.0  # 生成测试数据
+factory-boy>=3.3.0  # 测试工厂
+freezegun>=1.2.0  # 时间Mock
+responses>=0.23.0  # HTTP响应Mock
+respx>=0.20.0  # HTTPX响应Mock
+pytest-mock>=3.11.0  # pytest mock支持
+
+# 代码质量
+flake8>=6.0.0  # 代码风格检查
+black>=23.0.0  # 代码格式化
+isort>=5.12.0  # 导入排序
+mypy>=1.5.0  # 类型检查
+
+# 报告生成
+jinja2>=3.1.0  # 模板引擎（报告生成）
+matplotlib>=3.7.0  # 图表生成（性能报告）
+plotly>=5.15.0  # 交互式图表（可选）
+
+# 性能测试专用
+locust>=2.15.0  # 负载测试（可选）
+pytest-benchmark>=4.0.0  # 基准测试
+
+# XML和JSON处理
+lxml>=4.9.0  # XML处理
+jsonschema>=4.19.0  # JSON模式验证
+
+# 网络测试工具
+netaddr>=0.8.0  # 网络地址处理
+dnspython>=2.4.0  # DNS查询（如需要）
+
+# 时区处理
+pytz>=2023.3  # 时区支持
+
+# 正则表达式增强
+regex>=2023.8.8  # 增强正则表达式支持
+
+# 内存和性能分析
+memory-profiler>=0.61.0  # 内存分析（可选）
+line-profiler>=4.1.0  # 行级性能分析（可选）
+
+# 环境管理
+python-decouple>=3.8  # 环境变量管理（可选）
+
+# 兼容性
+typing-extensions>=4.7.0  # 类型提示扩展
+asyncio-throttle>=1.0.2  # 异步限流
+
+# 测试数据库
+pytest-postgresql>=5.0.0  # PostgreSQL测试数据库（如需要）
+
+# 容器化测试支持（可选）
+testcontainers>=3.7.0  # 测试容器（如需要）
+docker>=6.1.0  # Docker支持（如需要）
+
+# API文档测试
+openapi-spec-validator>=0.6.0  # OpenAPI规范验证
+
+# 缓存测试
+pytest-redis>=3.0.0  # Redis测试支持（如需要）
+
+# 消息队列测试（如需要）
+pika>=1.3.0  # RabbitMQ客户端
+redis>=4.6.0  # Redis客户端
+
+# 序列化格式支持
+msgpack>=1.0.0  # MessagePack序列化
+orjson>=3.9.0  # 高性能JSON
+
+# HTTP/2和HTTP/3支持（高级）
+h2>=4.1.0  # HTTP/2支持
+httpcore>=0.17.0  # HTTP核心
+
+# 安全测试工具
+bandit>=1.7.5  # 安全漏洞扫描（可选）
+safety>=2.3.0  # 依赖安全检查（可选）
+
+# 国际化测试（如需要）
+babel>=2.12.0  # 国际化支持
+
+# 文档生成（可选）
+sphinx>=7.1.0  # 文档生成
+sphinx-rtd-theme>=1.3.0  # RTD主题
+
+# 持续集成支持
+coverage[toml]>=7.2.0  # 覆盖率工具
+pytest-html>=3.2.0  # HTML测试报告
+pytest-json-report>=1.5.0  # JSON测试报告
+
+# 环境特定依赖
+# macOS
+pyobjc-core>=9.2  # macOS系统集成（仅macOS）
+
+# Windows
+pywin32>=306  # Windows系统集成（仅Windows）
+
+# 可选的高级功能
+# gevent>=23.7.0  # 协程库（如使用gevent）
+# eventlet>=0.33.0  # 协程库（如使用eventlet）
