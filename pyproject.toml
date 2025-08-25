@@ -23,7 +23,7 @@ pyzmq = "^25.1.1"
 langchain = "^0.0.350"
 langgraph = "^0.0.20"
 python-binance = "^1.0.19"
-ta-lib = "^0.4.28"
+# ta-lib = "^0.4.28"  # 使用内置mock版本
 pytest = "^7.4.3"
 pytest-asyncio = "^0.21.1"
 python-dotenv = "^1.0.0"
@@ -37,6 +37,9 @@ pydantic-extra-types = "^2.2.0"
 backtrader = "^1.9.78.123"
 plotly = "^5.18.0"
 streamlit = "^1.29.0"
+msgpack = "^1.0.7"
+scipy = "^1.11.4"
+cvxpy = "^1.4.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.12.0"
