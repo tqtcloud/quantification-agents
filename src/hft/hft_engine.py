@@ -8,6 +8,7 @@ from src.core.models import MarketData, Order
 from src.hft.orderbook_manager import OrderBookManager, OrderBookSnapshot
 from src.hft.microstructure_analyzer import MicrostructureAnalyzer, MicrostructureSignal
 from src.hft.execution_engine import FastExecutionEngine, ExecutionOrder, OrderType, SlippageConfig
+from src.hft.latency_monitor import LatencyMonitor, DataSourceConfig, AlertEvent, AlertLevel
 from src.utils.logger import LoggerMixin
 
 
@@ -30,6 +31,12 @@ class HFTConfig:
     update_interval_ms: float = 1.0  # 更新间隔（毫秒）
     latency_target_ms: float = 10.0  # 延迟目标（毫秒）
     
+    # 延迟监控配置
+    staleness_threshold_ms: float = 100.0  # 数据过期阈值（毫秒）
+    latency_stats_window: int = 1000  # 延迟统计窗口大小
+    alert_cooldown_seconds: float = 60.0  # 告警冷却时间
+    enable_latency_monitoring: bool = True  # 是否启用延迟监控
+    
     # 风险配置
     max_position_value: Decimal = field(default_factory=lambda: Decimal("50000"))
     max_daily_trades: int = 1000
@@ -48,6 +55,13 @@ class HFTMetrics:
     total_orders: int = 0
     filled_orders: int = 0
     avg_execution_latency: float = 0.0
+    
+    # 延迟监控指标
+    data_freshness_checks: int = 0
+    stale_data_detections: int = 0
+    data_source_switches: int = 0
+    avg_data_latency_ms: float = 0.0
+    p99_data_latency_ms: float = 0.0
     total_slippage_bps: float = 0.0
     pnl: Decimal = field(default_factory=lambda: Decimal("0"))
 
@@ -79,6 +93,17 @@ class HFTEngine(LoggerMixin):
             slippage_config=self.config.slippage_config
         )
         
+        # 延迟监控系统
+        self.latency_monitor: Optional[LatencyMonitor] = None
+        if self.config.enable_latency_monitoring:
+            self.latency_monitor = LatencyMonitor(
+                staleness_threshold_ms=self.config.staleness_threshold_ms,
+                stats_window_size=self.config.latency_stats_window,
+                alert_cooldown_seconds=self.config.alert_cooldown_seconds
+            )
+            # 注册告警回调
+            self.latency_monitor.add_alert_callback(self._on_latency_alert)
+        
         # 状态管理
         self._running = False
         self._symbols: List[str] = []
@@ -95,13 +120,22 @@ class HFTEngine(LoggerMixin):
         # 注册执行引擎回调
         self.execution_engine.add_execution_callback(self._on_order_executed)
         
-    async def initialize(self, symbols: List[str]):
+    async def initialize(self, symbols: List[str], data_sources: Optional[List[DataSourceConfig]] = None):
         """初始化HFT引擎"""
         self._symbols = symbols.copy()
         
         # 初始化各组件
         await self.orderbook_manager.initialize(symbols)
         await self.microstructure_analyzer.initialize(symbols)
+        
+        # 初始化延迟监控
+        if self.latency_monitor and data_sources:
+            await self.latency_monitor.initialize(data_sources)
+            # 设置默认数据源（优先级最高的）
+            if data_sources:
+                primary_source = min(data_sources, key=lambda x: x.priority)
+                for symbol in symbols:
+                    self.latency_monitor.set_active_data_source(symbol, primary_source.name)
         
         self.log_info(f"HFT Engine initialized for {len(symbols)} symbols: {symbols}")
         
@@ -114,6 +148,10 @@ class HFTEngine(LoggerMixin):
         
         # 启动执行引擎
         await self.execution_engine.start()
+        
+        # 启动延迟监控
+        if self.latency_monitor:
+            await self.latency_monitor.start()
         
         # 启动更新循环
         self._update_task = asyncio.create_task(self._update_loop())
@@ -132,6 +170,10 @@ class HFTEngine(LoggerMixin):
             except asyncio.CancelledError:
                 pass
         
+        # 停止延迟监控
+        if self.latency_monitor:
+            await self.latency_monitor.stop()
+        
         # 停止执行引擎
         await self.execution_engine.stop()
         
@@ -140,11 +182,43 @@ class HFTEngine(LoggerMixin):
         
         self.log_info("HFT Engine stopped")
         
-    async def update_market_data(self, symbol: str, market_data: MarketData) -> bool:
+    async def update_market_data(self, symbol: str, market_data: MarketData, data_source: Optional[str] = None) -> bool:
         """更新市场数据"""
         start_time = time.perf_counter()
         
         try:
+            # 延迟监控检查
+            is_fresh = True
+            if self.latency_monitor and data_source:
+                is_fresh, latency_metrics = await self.latency_monitor.check_data_freshness(
+                    symbol, market_data, data_source
+                )
+                
+                # 更新延迟指标
+                self.metrics.data_freshness_checks += 1
+                if not is_fresh:
+                    self.metrics.stale_data_detections += 1
+                    
+                    # 尝试切换数据源
+                    new_source = await self.latency_monitor.switch_data_source(
+                        symbol, "Data staleness detected"
+                    )
+                    if new_source:
+                        self.metrics.data_source_switches += 1
+                        self.log_warning(f"Switched data source for {symbol}: {data_source} -> {new_source}")
+                        # 这里应该通知上游系统使用新的数据源
+                
+                # 更新延迟统计
+                latency_summary = self.latency_monitor.get_latency_summary(symbol)
+                if latency_summary:
+                    self.metrics.avg_data_latency_ms = latency_summary.get("avg_latency_ms", 0.0)
+                    self.metrics.p99_data_latency_ms = latency_summary.get("p99_latency_ms", 0.0)
+            
+            # 如果数据不新鲜，可以选择跳过处理或使用降级策略
+            if not is_fresh and self.config.staleness_threshold_ms > 0:
+                self.log_debug(f"Skipping stale data for {symbol}")
+                return False
+            
             # 更新订单簿
             orderbook_updated = await self.orderbook_manager.update_orderbook(symbol, market_data)
             if not orderbook_updated:
@@ -307,6 +381,42 @@ class HFTEngine(LoggerMixin):
         except Exception as e:
             self.log_error(f"Error in order execution callback: {e}")
     
+    async def _on_latency_alert(self, alert: AlertEvent):
+        """延迟告警回调"""
+        try:
+            alert_msg = f"Latency Alert [{alert.level.value.upper()}]: {alert.message}"
+            
+            if alert.level in [AlertLevel.CRITICAL, AlertLevel.ERROR]:
+                self.log_error(
+                    alert_msg,
+                    symbol=alert.symbol,
+                    data_source=alert.data_source,
+                    latency_ms=alert.latency_ms,
+                    **alert.metadata
+                )
+            elif alert.level == AlertLevel.WARNING:
+                self.log_warning(
+                    alert_msg,
+                    symbol=alert.symbol,
+                    data_source=alert.data_source,
+                    latency_ms=alert.latency_ms,
+                    **alert.metadata
+                )
+            else:
+                self.log_info(
+                    alert_msg,
+                    symbol=alert.symbol,
+                    data_source=alert.data_source,
+                    latency_ms=alert.latency_ms,
+                    **alert.metadata
+                )
+                
+            # 这里可以添加额外的告警处理逻辑
+            # 比如发送邮件、短信、推送消息等
+            
+        except Exception as e:
+            self.log_error(f"Error handling latency alert: {e}")
+    
     def add_signal_callback(self, callback: Callable):
         """添加信号回调"""
         self.signal_callbacks.append(callback)
@@ -349,7 +459,7 @@ class HFTEngine(LoggerMixin):
     
     def get_system_status(self) -> Dict[str, any]:
         """获取系统状态"""
-        return {
+        status = {
             "running": self._running,
             "symbols": self._symbols,
             "metrics": {
@@ -361,11 +471,75 @@ class HFTEngine(LoggerMixin):
                 "total_orders": self.metrics.total_orders,
                 "filled_orders": self.metrics.filled_orders,
                 "avg_execution_latency_ms": self.metrics.avg_execution_latency,
-                "avg_slippage_bps": self.metrics.total_slippage_bps
+                "avg_slippage_bps": self.metrics.total_slippage_bps,
+                # 延迟监控指标
+                "data_freshness_checks": self.metrics.data_freshness_checks,
+                "stale_data_detections": self.metrics.stale_data_detections,
+                "data_source_switches": self.metrics.data_source_switches,
+                "avg_data_latency_ms": self.metrics.avg_data_latency_ms,
+                "p99_data_latency_ms": self.metrics.p99_data_latency_ms
             },
             "components": {
                 "orderbook_manager": "active" if self._running else "stopped",
                 "microstructure_analyzer": "active" if self._running else "stopped", 
-                "execution_engine": "active" if self._running else "stopped"
+                "execution_engine": "active" if self._running else "stopped",
+                "latency_monitor": "active" if (self.latency_monitor and self._running) else "disabled"
             }
         }
+        
+        # 添加延迟监控健康状态
+        if self.latency_monitor:
+            status["latency_monitoring"] = self.latency_monitor.get_system_health()
+        
+        return status
+    
+    def get_latency_stats(self, symbol: Optional[str] = None) -> Dict[str, any]:
+        """获取延迟统计信息"""
+        if not self.latency_monitor:
+            return {}
+        
+        if symbol:
+            return self.latency_monitor.get_latency_summary(symbol)
+        else:
+            # 返回所有symbol的延迟统计
+            result = {}
+            for sym in self._symbols:
+                stats = self.latency_monitor.get_latency_summary(sym)
+                if stats:
+                    result[sym] = stats
+            return result
+    
+    def get_data_source_status(self) -> Dict[str, str]:
+        """获取数据源状态"""
+        if not self.latency_monitor:
+            return {}
+        
+        return self.latency_monitor.get_system_health().get("data_sources", {})
+    
+    def get_active_data_sources(self) -> Dict[str, str]:
+        """获取活跃数据源映射"""
+        if not self.latency_monitor:
+            return {}
+        
+        return self.latency_monitor.get_system_health().get("active_sources", {})
+    
+    async def update_data_source_status(self, data_source: str, status: str):
+        """更新数据源状态"""
+        if not self.latency_monitor:
+            self.log_warning("Latency monitor not available")
+            return
+            
+        from src.hft.latency_monitor import DataSourceStatus
+        try:
+            status_enum = DataSourceStatus(status)
+            await self.latency_monitor.update_data_source_status(data_source, status_enum)
+        except ValueError:
+            self.log_error(f"Invalid data source status: {status}")
+    
+    async def switch_data_source(self, symbol: str, reason: str = "Manual switch") -> Optional[str]:
+        """手动切换数据源"""
+        if not self.latency_monitor:
+            self.log_warning("Latency monitor not available")
+            return None
+        
+        return await self.latency_monitor.switch_data_source(symbol, reason)

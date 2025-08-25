@@ -1,0 +1,224 @@
+# HFT信号处理系统配置文件
+
+# 集成信号处理器配置
+integrated_processor:
+  max_latency_ms: 5.0                    # 最大允许延迟（毫秒）
+  min_confidence_threshold: 0.65         # 最小置信度阈值
+  min_signal_strength: 0.5               # 最小信号强度阈值
+  max_position_size: 1.0                 # 最大仓位大小
+  max_daily_orders: 1000                 # 每日最大订单数
+  correlation_threshold: 0.8             # 相关性阈值
+
+# 多维度指标引擎配置  
+multidimensional_engine:
+  max_workers: 8                         # 最大工作线程数
+  cache_ttl: 300                         # 缓存TTL（秒）
+  timeframes:
+    - "1m"
+    - "5m" 
+    - "15m"
+    - "1h"
+  
+  # 各维度权重配置
+  dimension_weights:
+    momentum: 0.25
+    trend: 0.25  
+    volatility: 0.2
+    volume: 0.15
+    sentiment: 0.15
+
+# 延迟监控配置
+latency_monitor:
+  staleness_threshold_ms: 100.0          # 数据过期阈值（毫秒）
+  stats_window_size: 1000                # 统计窗口大小
+  alert_cooldown_seconds: 60.0           # 告警冷却时间
+  health_check_interval: 10.0            # 健康检查间隔
+  
+  # 数据源配置
+  data_sources:
+    - name: "binance"
+      priority: 1
+      max_latency_ms: 20.0
+      description: "币安主数据源"
+    - name: "okex"
+      priority: 2
+      max_latency_ms: 30.0  
+      description: "欧易备用数据源"
+    - name: "huobi"
+      priority: 3
+      max_latency_ms: 40.0
+      description: "火币备用数据源"
+
+# 信号处理器配置
+signal_processor:
+  max_queue_size: 10000                  # 最大队列大小
+  latency_target_ms: 1.0                 # 延迟目标（毫秒）
+  processing_workers: 4                  # 处理工作线程数
+  fusion_window_ms: 10.0                 # 信号融合窗口（毫秒）
+  
+  # 信号阈值配置
+  signal_thresholds:
+    imbalance: 0.3
+    toxicity: 0.5
+    price_anomaly: 0.4
+    volume_spike: 0.6
+    spread_anomaly: 0.5
+  
+  # 信号权重配置
+  signal_weights:
+    imbalance: 1.0
+    toxicity: 1.5
+    price_anomaly: 1.2
+    volume_spike: 0.8
+    spread_anomaly: 0.9
+
+# 智能订单路由配置
+smart_order_router:
+  max_child_orders: 20                   # 最大子订单数
+  max_order_value: 100000.0              # 最大订单价值
+  default_slice_size: 0.1                # 默认分片大小
+  
+  # 交易场所配置
+  venues:
+    binance:
+      priority: 1
+      latency_ms: 10.0
+      liquidity_score: 0.9
+      fee_rate: 0.001
+      min_order_size: 0.001
+      max_order_size: 1000.0
+      is_active: true
+    
+    okex:
+      priority: 2
+      latency_ms: 15.0
+      liquidity_score: 0.8
+      fee_rate: 0.0015
+      min_order_size: 0.001
+      max_order_size: 500.0
+      is_active: true
+  
+  # 执行算法配置
+  execution_algorithms:
+    twap:
+      time_factor: 1.0
+      volume_factor: 0.5
+    vwap:
+      time_factor: 0.3
+      volume_factor: 1.0
+    iceberg:
+      slice_ratio: 0.05
+      min_slices: 10
+    sniper:
+      slice_ratio: 0.5
+      urgency_multiplier: 2.0
+
+# 容错管理配置
+fault_tolerance:
+  error_window_size: 1000                # 错误历史窗口大小
+  health_check_interval: 10.0            # 健康检查间隔
+  
+  # 默认熔断器配置
+  circuit_breaker:
+    failure_threshold: 5                 # 失败阈值
+    recovery_timeout: 30.0               # 恢复超时（秒）
+    success_threshold: 3                 # 半开状态成功阈值
+    monitoring_window: 60.0              # 监控窗口（秒）
+  
+  # 默认重试策略
+  retry_policy:
+    max_attempts: 3                      # 最大重试次数
+    initial_delay: 1.0                   # 初始延迟（秒）
+    max_delay: 30.0                      # 最大延迟（秒）
+    exponential_base: 2.0                # 指数退避基数
+    jitter: true                         # 是否添加随机抖动
+  
+  # 恢复策略映射
+  recovery_strategies:
+    multidimensional_engine:
+      network_error: "retry"
+      timeout_error: "retry"
+      processing_error: "graceful_degradation"
+      system_error: "circuit_break"
+      
+    latency_monitor:
+      network_error: "fallback"
+      data_error: "fallback"
+      system_error: "circuit_break"
+      
+    signal_processor:
+      network_error: "retry"
+      processing_error: "graceful_degradation"
+      system_error: "circuit_break"
+      
+    order_router:
+      network_error: "retry"
+      order_error: "fail_fast"
+      system_error: "circuit_break"
+
+# 风险管理配置
+risk_management:
+  max_position_exposure: 0.1             # 最大仓位敞口（10%）
+  max_symbol_concentration: 0.05         # 单一标的最大集中度（5%）
+  max_daily_loss: 0.02                   # 每日最大损失（2%）
+  var_limit: 0.01                        # VaR限制（1%）
+  
+  # 止损配置
+  stop_loss:
+    default_percentage: 0.02             # 默认止损比例（2%）
+    trailing_stop: true                  # 是否启用跟踪止损
+    trailing_percentage: 0.015           # 跟踪止损比例（1.5%）
+  
+  # 头寸管理
+  position_sizing:
+    kelly_fraction: 0.25                 # 凯利公式系数
+    max_single_trade: 0.05               # 单笔交易最大比例（5%）
+    volatility_adjustment: true          # 是否进行波动率调整
+
+# 监控和报告配置
+monitoring:
+  metrics_retention_days: 30             # 指标保留天数
+  alert_thresholds:
+    latency_warning_ms: 3.0              # 延迟警告阈值（毫秒）
+    latency_critical_ms: 10.0            # 延迟严重阈值（毫秒）
+    error_rate_warning: 0.05             # 错误率警告阈值（5%）
+    error_rate_critical: 0.15            # 错误率严重阈值（15%）
+    fill_rate_warning: 0.8               # 成交率警告阈值（80%）
+    fill_rate_critical: 0.6              # 成交率严重阈值（60%）
+  
+  # 报告配置
+  reporting:
+    daily_report: true                   # 是否生成日报
+    weekly_report: true                  # 是否生成周报
+    real_time_dashboard: true            # 是否启用实时仪表板
+
+# 日志配置
+logging:
+  level: "INFO"                          # 日志级别
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    - type: "file"
+      filename: "logs/hft_system.log"
+      max_bytes: 10485760                # 10MB
+      backup_count: 5
+    - type: "console"
+      stream: "stdout"
+  
+  # 特定组件日志级别
+  loggers:
+    "src.hft.integrated_signal_processor": "DEBUG"
+    "src.hft.smart_order_router": "INFO"
+    "src.hft.fault_tolerance_manager": "WARNING"
+
+# 测试配置
+testing:
+  mock_data_enabled: true                # 是否启用模拟数据
+  test_duration_seconds: 60              # 测试持续时间
+  data_generation_frequency_hz: 10       # 数据生成频率（Hz）
+  error_injection_rate: 0.05             # 错误注入率（5%）
+  
+  # 性能测试配置
+  performance_tests:
+    concurrent_processing: 100           # 并发处理数量
+    memory_limit_mb: 256                 # 内存限制（MB）
+    cpu_limit_percent: 80                # CPU使用限制（%）
