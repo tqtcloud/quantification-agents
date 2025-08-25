@@ -1,0 +1,122 @@
+# Coverage.py 配置文件
+# 用于策略管理系统的测试覆盖率配置
+
+[run]
+# 指定源代码目录
+source = src/strategy
+
+# 包含的文件模式
+include = 
+    src/strategy/*.py
+    src/strategy/**/*.py
+
+# 排除的文件模式
+omit = 
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */migrations/*
+    */venv/*
+    */.venv/*
+    */build/*
+    */dist/*
+    */docs/*
+    */examples/*
+    */scripts/*
+
+# 启用分支覆盖率
+branch = True
+
+# 并发执行
+concurrency = multiprocessing
+
+# 数据文件位置
+data_file = .coverage
+
+[report]
+# 报告精度
+precision = 2
+
+# 显示缺失行号
+show_missing = True
+
+# 跳过覆盖率为100%的文件
+skip_covered = False
+
+# 跳过空文件
+skip_empty = False
+
+# 排除的行（使用注释标记）
+exclude_lines =
+    # 标准排除模式
+    pragma: no cover
+    
+    # 不测试防御性断言
+    def __repr__
+    if self\.debug:
+    if settings\.DEBUG
+    
+    # 不测试抽象方法
+    raise AssertionError
+    raise NotImplementedError
+    
+    # 不测试非常规代码路径
+    if 0:
+    if __name__ == .__main__.:
+    
+    # 不测试类型检查代码
+    if TYPE_CHECKING:
+    
+    # 不测试导入错误处理
+    except ImportError:
+    
+    # 不测试调试代码
+    if DEBUG:
+    
+    # 自定义排除模式
+    # 不测试日志记录
+    logger\.debug
+    logger\.info
+    
+    # 不测试异常处理中的日志
+    except.*:.*logger\.(error|warning|critical)
+
+# 部分覆盖率阈值（低于此值显示警告）
+partial_branches = 
+    pragma: no branch
+
+# 忽略错误的文件
+ignore_errors = True
+
+[html]
+# HTML报告输出目录
+directory = logs/coverage_html
+
+# HTML报告标题
+title = 策略管理系统测试覆盖率报告
+
+# 显示上下文
+show_contexts = True
+
+# 跳过文件的阈值（覆盖率低于此值的文件将被突出显示）
+skip_covered = False
+
+[xml]
+# XML报告输出文件
+output = logs/coverage.xml
+
+[json]
+# JSON报告输出文件
+output = logs/coverage.json
+
+# 包含更多详细信息
+show_contexts = True
+pretty_print = True
+
+[paths]
+# 路径映射（用于合并不同环境的覆盖率数据）
+source =
+    src/strategy
+    /usr/src/app/strategy
+    /app/strategy
+    */site-packages/strategy
